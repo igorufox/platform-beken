@@ -1,0 +1,41 @@
+{
+  "name": "BK7231N (Tuya bootloader)",
+  "url": "https://github.com/xoseperez/espurna",
+  "vendor": "Beken",
+  "build": {
+    "mcu": "bk7231n",
+    "family": "BK7231N",
+    "f_cpu": "120000000L",
+    "ldscript": "bk7231n_bsp.ld",
+    "bkboot_version": "1.0.1-bk7231n",
+    "bkoffset_app": "0x10000",
+    "bkrbl_size_app": "0x108700",
+    "bkcrypt_coeffs": "510fb093a3cbeadc5993a17ec7adeb03",
+    "bkota": {
+      "format": "rbl-ug",
+      "encryption": "aes256",
+      "compression": "gzip",
+      "key": "0123456789ABCDEF0123456789ABCDEF",
+      "iv": "0123456789ABCDEF"
+    }
+  },
+  "flash": {
+    "bootloader": "0x000000+0x11000",
+    "app": "0x011000+0x119000",
+    "download": "0x12A000+0xA6000",
+    "calibration": "0x1D0000+0x1000",
+    "ble_bonding": "0x1D1000+0x1000",
+    "kvs": "0x1D3000+0x8000",
+    "userdata": "0x1DB000+0x25000",
+    "tuya": "0x1ED000+0x13000"
+  },
+  "frameworks": [],
+  "upload": {
+    "maximum_size": 1083136,
+    "maximum_ram_size": 262144,
+    "flash_size": 2097152,
+    "speed": 460800,
+    "protocol": "uart",
+    "protocols": ["uart"]
+  }
+}

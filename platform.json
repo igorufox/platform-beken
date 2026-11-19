@@ -1,0 +1,19 @@
+{
+  "name": "espurna-beken",
+  "title": "ESPurna Beken",
+  "description": "Beken BK7231N on the BDK alone: the toolchain, the board, the build of ESPurna's sources; the BDK is built by scripts/beken_bdk.py (no LibreTiny, owner 2026-11-18)",
+  "version": "1.0.0",
+  "frameworks": {},
+  "packages": {
+    "toolchain-gccarmnoneeabi": {
+      "type": "toolchain",
+      "owner": "platformio",
+      "version": "1.140201.0"
+    },
+    "framework-beken-bdk": {
+      "type": "framework",
+      "optional": true,
+      "version": "*"
+    }
+  }
+}
