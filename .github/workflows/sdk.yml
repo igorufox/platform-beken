@@ -1,0 +1,75 @@
+name: SDK
+
+# The binary PlatformIO package framework-beken-bdk: sdk/build.py compiles the BDK, the FreeRTOS kernel with its ARM968
+# port, lwIP with the BDK port and Mbed TLS (the pins below) with the glue of sdk/glue, links a test image from the
+# package alone, and zips it. Every run keeps the package as an artifact; a push to main also releases it: the tag is
+# sdk-<version of sdk/package.json> (3.0.33+espurna.1 -> sdk-3.0.33-espurna.1), made by this workflow when that release
+# does not exist yet - a new release is a version bump of sdk/package.json.
+on:
+  push:
+    branches: [main]
+    paths:
+      - "sdk/**"
+      - ".github/workflows/sdk.yml"
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  TOOLCHAIN_URL: https://developer.arm.com/-/media/Files/downloads/gnu/14.2.rel1/binrel/arm-gnu-toolchain-14.2.rel1-x86_64-arm-none-eabi.tar.xz
+  BDK_REPO: https://github.com/libretiny-eu/framework-beken-bdk.git
+  BDK_COMMIT: 841343e64d7584a3a650222ab0b6ea967755352a
+  LWIP_REPO: https://github.com/libretiny-eu/lwip.git
+  LWIP_COMMIT: 0d1cedf257bf58ac7c12fb7b79ec79daf2a006bd
+  KERNEL_URL: https://github.com/igorufox/FreeRTOS-Kernel/releases/download/11.1.0-espurna.3/framework-freertos-kernel-11.1.0-espurna.3.zip
+  MBEDTLS_REPO: https://github.com/igorufox/mbedtls.git
+  MBEDTLS_COMMIT: b3b5f67d252dcb83bafab82ddc3b280c030fc6d5   # 3.6.6-espurna.1
+
+jobs:
+  package:
+    runs-on: ubuntu-24.04
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Version
+        run: |
+          VERSION=$(python3 -c "import json; print(json.load(open('sdk/package.json'))['version'])")
+          TAG="sdk-${VERSION/+/-}"
+          echo "VERSION=$VERSION" >> "$GITHUB_ENV"
+          echo "TAG=$TAG" >> "$GITHUB_ENV"
+          echo "ZIP=framework-beken-bdk-${VERSION/+/-}.zip" >> "$GITHUB_ENV"
+          if gh release view "$TAG" > /dev/null 2>&1; then echo "RELEASED=1" >> "$GITHUB_ENV"; fi
+
+      - name: Sources
+        run: |
+          mkdir -p ~/deps && cd ~/deps
+          curl -sSfL "$TOOLCHAIN_URL" | tar -xJ && mv arm-gnu-toolchain-* gcc
+          fetch() { git init -q "$1" && git -C "$1" fetch -q --depth 1 "$2" "$3" && git -C "$1" checkout -q FETCH_HEAD; }
+          fetch bdk "$BDK_REPO" "$BDK_COMMIT"
+          fetch lwip "$LWIP_REPO" "$LWIP_COMMIT"
+          fetch mbedtls "$MBEDTLS_REPO" "$MBEDTLS_COMMIT"
+          curl -sSfL -o kernel.zip "$KERNEL_URL" && mkdir kernel && unzip -q kernel.zip -d kernel
+          ~/deps/gcc/bin/arm-none-eabi-gcc --version | head -1
+
+      - name: Build
+        run: |
+          python3 sdk/build.py --bdk ~/deps/bdk --kernel ~/deps/kernel --lwip ~/deps/lwip --mbedtls ~/deps/mbedtls \
+            --toolchain ~/deps/gcc --version "$VERSION" --out dist/framework-beken-bdk --work work \
+            --jobs "$(nproc)" --test
+          mv dist/framework-beken-bdk.zip "dist/$ZIP"
+          ls -l "dist/$ZIP"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: framework-beken-bdk
+          path: dist/*.zip
+
+      - name: Release
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && env.RELEASED != '1'
+        run: |
+          gh release create "$TAG" "dist/$ZIP" --target "$GITHUB_SHA" --title "$TAG" \
+            --notes "The BK7231N SDK compiled (sdk/build.py) - BDK 3.0.33 with its glue, FreeRTOS-Kernel 11.1.0-espurna.3, lwIP 2.2.0 with the BDK port, Mbed TLS 3.6.6, ARM GCC 14.2"

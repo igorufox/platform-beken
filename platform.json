@@ -1,7 +1,7 @@
 {
   "name": "espurna-beken",
   "title": "ESPurna Beken",
-  "description": "Beken BK7231N on the BDK alone: the toolchain, the board, the build of ESPurna's sources; the BDK is built by scripts/beken_bdk.py (no LibreTiny, owner 2026-11-18)",
+  "description": "Beken BK7231N on the BDK alone: the toolchain, the board, the build of ESPurna's sources; the SDK (BDK, FreeRTOS, lwIP, Mbed TLS) comes compiled from sdk/ of this repository (.github/workflows/sdk.yml), no LibreTiny",
   "version": "1.0.0",
   "frameworks": {},
   "packages": {
