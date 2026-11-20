@@ -306,6 +306,17 @@ class Builder:
             else:
                 raise SystemExit("build.py: lib%s.a not found in the BDK" % name)
 
+        # the BDK's delay() (target_util.c: a busy loop of CPU cycles, called by its open sources and by the closed
+        # libraries) takes the name of the Arduino API's delay(ms): renamed in every archive, so that the firmware's
+        # delay is its own and a module never binds to this one
+        for name in sorted(os.listdir(os.path.join(self.out, "lib"))):
+            subprocess.run([self.prefix + "objcopy", "--redefine-sym", "delay=bk_delay",
+                            os.path.join(self.out, "lib", name)], check=True)
+            names = subprocess.run([self.prefix + "nm", "-g", os.path.join(self.out, "lib", name)],
+                                   stdout=subprocess.PIPE, universal_newlines=True).stdout.split()
+            if "delay" in names:
+                raise SystemExit("build.py: %s still has delay" % name)
+
         os.makedirs(os.path.join(self.out, "ld"))
         shutil.copy2(os.path.join(GLUE, "bk7231n_bsp.ld"), os.path.join(self.out, "ld"))
 

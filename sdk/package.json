@@ -1,5 +1,5 @@
 {
   "name": "framework-beken-bdk",
-  "version": "3.0.33+espurna.1",
+  "version": "3.0.33+espurna.2",
   "description": "The version of the compiled BK7231N SDK this folder releases (sdk/build.py, .github/workflows/sdk.yml): a bump releases a new one"
 }
